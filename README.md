@@ -16,3 +16,11 @@ hello
 6. 5V 4A인지 꼭 확인하고 jetson에 사용할것
 7. jeston에 keyboard mouse, keyboard USB를 연결할 것
 8. dkdkdkdkddkdkdk
+
+'한글 설치'
+``` bash
+$ sudo apt-get update
+$ sudo apt-get install fcitx-hangul
+$ im-config -n fcitx
+$ reboot
+```
