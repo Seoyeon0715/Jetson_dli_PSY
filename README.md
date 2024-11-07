@@ -15,4 +15,4 @@ hello
 5. USB 2층 가장 우측이 잘 작동되는 자리이다. 
 6. 5V 4A인지 꼭 확인하고 jetson에 사용할것
 7. jeston에 keyboard mouse, keyboard USB를 연결할 것
-8. 
+8. dkdkdkdkddkdkdk
