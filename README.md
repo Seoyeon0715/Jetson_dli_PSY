@@ -1,4 +1,4 @@
-# Jetson_dli_SYP
+# Jetson_dli_PSY
 
 ``` bash
 hello
