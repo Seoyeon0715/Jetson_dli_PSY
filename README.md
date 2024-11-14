@@ -24,3 +24,5 @@ $ sudo apt-get install fcitx-hangul
 $ im-config -n fcitx
 $ reboot
 ```
+
+![poster](./codescreenshot.png)
