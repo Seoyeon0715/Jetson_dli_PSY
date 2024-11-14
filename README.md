@@ -29,6 +29,6 @@ $ reboot
 ![poster](./codescreenshot2.png)
 ![poster](./codescreenshot3.png)
 ![poster](./codescreenshot4.png)
-![poster](./codescreensho5t.png)
-![poster](./codescreensho6t.png)
+![poster](./codescreenshot5.png)
+![poster](./codescreenshot6.png)
 ![poster](./codescreenshot7.png)
