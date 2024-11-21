@@ -85,22 +85,50 @@ Jetson Nano는 NVIDIA에서 제공하는 소형 컴퓨터로, AI 및 딥러닝 �
 8. **네트워크 연결**
 - Wi-Fi나 유선 네트워크를 통해 Jetson Nano를 인터넷에 연결하여 소프트웨어를 업데이트하고 필요한 패키지를 설치합니다.
 
+**실행해야 할 명령**
+
+```bash
+# Wi-Fi 네트워크 목록 확인
+sudo nmcli device wifi list
+
+# Wi-Fi 네트워크에 연결 (패스워드가 있을 경우)
+sudo nmcli device wifi connect <ssid_name> password <password>
+```
+**user: dcrc , password: 1234** 로 설정하였으니 잊으면 안된다. 
+
 9. **필수 소프트웨어 설치**
 - AI 프로젝트에 필요한 패키지나 라이브러리(NVIDIA CUDA, cuDNN 등)를 Jetson Nano에 설치할 수 있습니다.
 
 ![poster](./241107-5.jpg)
 ![poster](./241107-6.jpg)
+![poster](./241107-7.jpg)
 
 ### Hangul 설치
+[한글 설치 관련 참고](https://driz2le.tistory.com/253)
 
-'한글 설치'
-``` bash
-$ sudo apt-get update
-$ sudo apt-get install fcitx-hangul
-$ im-config -n fcitx
-$ reboot
+1. **한글 입력기 설치**
+먼저, 시스템 패키지 목록을 업데이트하고 `fcitx-hangul` 패키지를 설치해야 합니다.
+터미널에 아래 명령어를 입력하세요:
+
+```bash
+sudo apt-get update
+sudo apt-get install fcitx-hangul
 ```
 
+이후, im-config 명령어로 입력기를 fcitx로 설정한다. 
+마지막으로, 시스템을 재부팅까지 한다. 
+```bash
+im-config -n fcitx
+reboot
+```
+한글이 잘 설치되면 한영키 클릭 시 아래와 같이 키보드 아이콘이 바뀌는 것을 볼 수 있다. 
+(한글 아이콘이 뜨는 이미지 넣기)
+
+
+
+# 11월 14일 수업내용 : 이미지, 동영상 만들기
+
+1.8.19
 ![poster](./codescreenshot.png)
 ![poster](./codescreenshot2.png)
 ![poster](./codescreenshot3.png)
