@@ -128,6 +128,57 @@ reboot
 
 # 11월 14일 수업내용 : 이미지, 동영상 만들기
 
+## 1. 쿨링팬과 jtop
+1.**Jetson Nano에서 jtop 사용법**
+
+`jtop`은 Jetson 플랫폼에서 시스템 자원 사용 현황을 모니터링할 수 있는 도구입니다. 이는 **GPU**, **CPU**, **메모리**, **디스크**, **네트워크** 등의 사용 상태를 실시간으로 확인할 수 있게 도와줍니다. `jtop`은 Jetson Nano의 성능을 최적화하고 모니터링할 때 유용한 도구입니다.
+
+2. **jtop 설치 방법**
+
+`jtop`을 설치하려면 터미널에 아래 명령어를 입력합니다:
+
+```bash
+sudo apt install python3-pip
+```
+terminal에서 명령을 실행하면 컴퓨터가 물어본다. 
+''**do you want to continue?**'' 
+Y를 입력해 계속 진행하면 된다.
+
+```bash
+sudo pip3 install jetson-stats
+```
+**에러 해결 방법**
+만약 에러가 발생하면, 아래 명령어로 시스템을 업데이트하고 업그레이드합니다.
+
+```bash
+sudo apt-get update
+sudo apt-get upgrade
+```
+그리고 jetson-stats-4.2.3 버전이 제대로 설치되었는지 확인합니다.
+
+**시스템 재부팅 및 jtop 실행**
+
+시스템을 재부팅하려면 아래 명령어를 입력합니다:
+
+```bash
+reboot
+```
+재부팅 후에는 jtop을 실행하여 시스템 상태를 모니터링하면 됩니다.
+
+'''bash
+jtop
+```
+온도체크를 하면 된다. 온도가 무척 높아지기 때문에 쿨링팬을 설치한다.
+
+** 터미널 명령어 실행 ** 
+
+터미널을 열고 아래 명령어를 입력하여 실행합니다:
+
+```bash
+sudo sh -c 'echo 128 > /sys/devices/pwm-fan/target_pwm'
+```
+나의 사본 56페이지까지 정리함
+
 1.8.19
 ![poster](./codescreenshot.png)
 ![poster](./codescreenshot2.png)
