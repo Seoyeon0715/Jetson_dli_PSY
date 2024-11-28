@@ -361,7 +361,7 @@ Press '2' to take a snapshot
 ![poster](./codescreenshot7.png)
 
 # 11월 21일 수업내용
-## 0. 실습 전 할일 DLI docker 설치
+## 1. 실습 전 할일 DLI docker 설치
 1. **DLI docker**
 * DLI docker이미지를 설치.
 * 카메라 동작까지 확인합니다. 
@@ -488,4 +488,13 @@ sudo systemctl set-default graphical.target
 reboot
 ```
 재부팅 후, 시스템이 GUI 환경으로 부팅됩니다.
+
+9. **웹 브라우저를 열고 주소창에 얻은 접속 url 입력**
+http://172.20.10.4:8888/lab/tree/classification/classification_interactive.ipynb (이번 실습을 통해 실제로 얻은 주소창이다)
+
+## 2. Thumbs Project - Image Classification Project
+![image](https://github.com/user-attachments/assets/8d217135-a07a-4642-a5a4-977b1470b324)
+![image](https://github.com/user-attachments/assets/75847c5d-b251-4e30-aac4-27de09b53754)
+
+
 
