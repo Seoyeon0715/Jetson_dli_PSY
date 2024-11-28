@@ -156,7 +156,7 @@ sudo apt-get upgrade
 ```
 그리고 jetson-stats-4.2.3 버전이 제대로 설치되었는지 확인합니다.
 
-**시스템 재부팅 및 jtop 실행**
+3. **시스템 재부팅 및 jtop 실행**
 
 시스템을 재부팅하려면 아래 명령어를 입력합니다:
 
@@ -170,7 +170,7 @@ jtop
 ```
 온도체크를 하면 된다. 온도가 무척 높아지기 때문에 쿨링팬을 설치한다.
 
-**터미널 명령어 실행** 
+4. **터미널 명령어 실행** 
 
 터미널을 열고 아래 명령어를 입력하여 실행합니다:
 
@@ -351,10 +351,7 @@ Press '2' to take a snapshot
 녹화된 영상과 스냅샷은 Pictures 폴더에 저장됩니다.
 파일명: VIDEO_XXXX.mp4, IMAGE_XXXX.jpg
 
-
-
-
-1.8.19
+### 아래는 11월 14일 수업에서 실행한 Terminal을 캡처한 화면
 ![poster](./codescreenshot.png)
 ![poster](./codescreenshot2.png)
 ![poster](./codescreenshot3.png)
@@ -362,3 +359,133 @@ Press '2' to take a snapshot
 ![poster](./codescreenshot5.png)
 ![poster](./codescreenshot6.png)
 ![poster](./codescreenshot7.png)
+
+# 11월 21일 수업내용
+## 0. 실습 전 할일 DLI docker 설치
+1. **DLI docker**
+* DLI docker이미지를 설치.
+* 카메라 동작까지 확인합니다. 
+
+2. **Headless 모드로 동작**
+Jetson Nano의 **헤드리스 모드**란, 모니터나 키보드 없이 Jetson을 사용할 수 있는 모드를 의미합니다. 이 모드에서는 GUI(그래픽 사용자 인터페이스)가 없으며, 화면은 검정색으로 표시됩니다. Jetson Nano를 처음 부팅할 때 스크립트를 통해 사용자 이름, 암호, 언어, 시간대 등을 설정할 수 있습니다. 헤드리스 모드는 주로 네트워크를 통해 Jetson을 원격으로 제어할 때 사용됩니다.
+
+3. **L4T**
+마이크로 5핀을 제슨나노와 데스크탑에 연결하면 컴퓨터 오른쪽 하단에 L4T라는 글이 써진다. 연결이 되었다는 의미이다. 이 글이 꼭 나와야한다.
+
+4. **dir 추가하기**
+디렉토리를 생성한다
+```bash
+mkdir -p ~/nvdli-data
+ls
+```
+ls를 통해 생성된 nvdli-data 디렉토리를 포함한 파일 및 폴더 목록이 출력되는지 확인한다. 
+
+5. **Docker 명령어**
+```bash
+sudo docker run --runtime nvidia -it --rm --network host \
+    --memory=500M --memory-swap=4G \
+    --volume ~/nvdli-data:/nvdli-nano/data \
+    --volume /tmp/argus_socket:/tmp/argus_socket \
+    --device /dev/video0 \
+    nvcr.io/nvidia/dli/dli-nano-ai:v2.0.2-r32.7.1kr
+```
+실행 결과
+* NVIDIA DLI의 Nano AI 환경이 설정된 Docker 컨테이너가 실행됩니다.
+* 컨테이너 내에서 머신 러닝 및 AI 관련 작업을 수행할 수 있습니다.
+
+```bash
+  chmod +x docker_dli_run.sh
+```
+`chmod +x docker_dli_run.sh` 명령어는 **`docker_dli_run.sh` 스크립트 파일에 실행 권한을 부여**합니다.
+
+* `chmod`: 파일의 권한을 변경하는 명령어.
+* `+x`: 실행 권한을 추가하는 옵션.
+* `docker_dli_run.sh`: 실행 권한을 부여할 대상 파일.
+
+이 명령어를 실행하면, `docker_dli_run.sh` 파일을 실행 가능한 프로그램처럼 사용할 수 있습니다. 이후에는 `./docker_dli_run.sh` 명령으로 파일을 실행할 수 있습니다. 그리고 ls를 통해 파일을 확인한다. 
+
+```bash
+[sudo] password for dli:
+```
+이러한 명령어가 나오면 사용자명과 비밀번호를 입력한다. 
+
+6. **Docker 컨테이너 실행 후 상태 설명**
+
+1. 다운로드 상태
+- Docker가 필요한 이미지를 다운로드하고 실행 준비를 완료한 상태입니다.
+- 메시지:
+- - 모든 이미지 레이어가 성공적으로 다운로드되었습니다.
+- **Digest**: 이미지의 고유 해시값으로, 다운로드된 이미지의 무결성을 확인할 수 있습니다.
+
+2. JupyterLab 실행
+- JupyterLab 서버가 실행되었습니다.
+- 접속 URL: http://192.168.55.1:8888 (예시입니다) 
+
+- **암호**: `dlinano`
+- **로그 위치**:
+/var/log/jupyter.log (컨테이너 내부)
+
+- JupyterLab 실행 중 발생한 로그를 확인하려면 이 경로를 참조하세요.
+
+3. 작업 환경
+- 현재 컨테이너 내에서 루트 권한으로 작업 중입니다.
+
+```bash
+root@dli-desktop:/nvdli-nano#
+```
+
+- 이 상태에서 추가 명령어를 실행하여 작업을 계속 진행할 수 있습니다.
+
+**요약**
+- JupyterLab이 실행되었으므로, 웹 브라우저에서 제공된 URL로 접속하여 AI 개발 환경을 사용할 수 있습니다.
+
+7. **SWAP**
+Swap 메모리 설정 및 시스템 모드 변경 과정
+
+(1) 기존 `nvzramconfig` 비활성화
+```bash
+sudo systemctl disable nvzramconfig
+```
+ZRAM 설정을 비활성화하여 기존 메모리 압축 기능을 중지합니다.
+
+(2) 시스템 부팅 모드 변경
+```bash
+sudo systemctl set-default multi-user.target
+```
+시스템 부팅 모드를 GUI 모드에서 CLI(텍스트 기반) 모드로 변경합니다.
+
+(3) Swap 파일 생성
+```bash
+sudo fallocate -l 18G /mnt/18GB.swap
+sudo chmod 600 /mnt/18GB.swap
+sudo mkswap /mnt/18GB.swap
+```
+fallocate: 크기 18GB의 Swap 파일을 /mnt/18GB.swap 경로에 생성.
+chmod: Swap 파일의 권한을 600으로 설정(소유자만 읽기 및 쓰기 가능).
+mkswap: Swap 파일을 실제 Swap 공간으로 초기화.
+
+(4) Swap 파일을 시스템에 등록
+```bash
+sudo su
+echo "/mnt/18GB.swap swap swap defaults 0 0" >> /etc/fstab
+exit
+```
+**/etc/fstab**에 Swap 파일 경로를 등록하여 재부팅 시 자동으로 Swap이 활성화되도록 설정.
+
+(5) 시스템 재부팅
+```bash
+sudo reboot
+```
+설정을 적용하기 위해 시스템을 재부팅합니다.
+
+(6) 재부팅 후 L4T 연결 확인
+재부팅 후, Micro USB 5핀 케이블을 연결합니다.
+연결이 성공하면 화면 오른쪽 하단에 L4T 연결됨 표시가 나타납니다.
+
+8. **시스템을 GUI 모드로 설정**
+```bash
+sudo systemctl set-default graphical.target
+reboot
+```
+재부팅 후, 시스템이 GUI 환경으로 부팅됩니다.
+
