@@ -177,7 +177,182 @@ jtop
 ```bash
 sudo sh -c 'echo 128 > /sys/devices/pwm-fan/target_pwm'
 ```
-나의 사본 56페이지까지 정리함
+## 2. 카메라
+
+1. **카메라 인식**
+```bash
+ls /dev/vi*
+```
+이 코드는 제슨이 카메라 인식을 하는 지 확인하는 명령어입니다. 
+
+2. **USB-Camera 파일**
+```bash
+git clone https://github.com/jetsonhacks/USB-Camera.git
+```
+위 명령어는 USB-Camera라는 리포지토리를 Jetson 로컬 환경으로 복제(clone)합니다. 성공 시, 리포지토리 내 모든 파일이 USB-Camera라는 디렉토리에 다운로드됩니다.
+
+```bash
+ls
+```
+ls 명령어는 현재 디렉토리에 있는 폴더 및 파일 목록을 표시합니다.
+위 명령어 실행 후, 다음과 같은 항목들이 표시됩니다: Desktop, Downloads, Pictures, USB-Camera 등.
+
+```bash
+cd USB-Camera
+```
+cd 명령어는 지정된 디렉토리로 이동합니다.
+위 명령어 실행 후, 현재 작업 디렉토리는 USB-Camera로 변경됩니다.
+
+3. **Jetson에서 사용 가능한 카메라 종류**
+
+(1) USB 카메라
+   - **연결 방식**: USB 포트를 통해 연결
+   - **특징**:
+     - 플러그 앤 플레이 (대부분 드라이버 필요 없음)
+     - 다양한 기기에서 사용 가능
+     - 상대적으로 느린 속도와 높은 지연 시간
+
+(2) CSI(Camera Serial Interface) 카메라
+   - **연결 방식**: CSI 포트를 통해 리본 케이블로 연결
+   - **특징**:
+     - Jetson 전용으로 최적화
+     - 고속 데이터 전송 및 낮은 지연 시간
+     - NVIDIA IMX219 카메라 모듈 등 지원
+
+4. **GStreamer를 활용한 카메라 실행**
+```bash
+python3 usb-camera-gst.py
+```
+usb-camera-gst.py: OpenCV와 GStreamer를 사용해 USB 카메라를 실행하는 Python 스크립트입니다.
+
+```bash
+[ WARN:0] ... GStreamer warning: Cannot query video position ...
+```
+이 경고는 GStreamer 초기화 과정에서 나타나는 일반적인 메시지이며, 실행에는 영향을 미치지 않습니다.
+
+5. **얼굴 검출 스크립트 실행 과정**
+```bash
+   python3 face-detect-usb.py
+```
+이 스크립트는 USB 카메라로 입력된 영상을 사용하여 얼굴을 검출합니다.
+OpenCV를 활용하여 실시간으로 얼굴을 인식합니다. 실행 시, USB 카메라의 영상 스트림이 열리며 얼굴을 감지하고, 감지된 영역에 사각형을 그려 표시합니다. 성공적으로 실행되면 카메라 창이 열리고, 검출 결과가 실시간으로 표시됩니다.
+
+**(참고사항)**
+스크립트를 실행하기 전, USB 카메라가 제대로 연결되었는지 확인하세요.
+필요 시 OpenCV가 설치되어 있어야 하므로, 설치되지 않았다면 다음 명령어로 설치합니다
+
+```bash
+pip install opencv-python
+pip install opencv-python-headless
+```
+**(경고메시지)**
+```bash
+[ WARN:0] ... GStreamer warning: Cannot query video position ...
+```
+이는 정상적인 초기화 과정에서 나타나는 일반적인 경고로, 실행에는 영향을 미치지 않습니다.
+
+6. **이미지 capture**
+
+(1) 이미지 캡처 명령어 실행
+```bash
+nvgstcapture-1.0 --camsrc=0 --cap-dev-node=/dev/video0
+```
+nvgstcapture-1.0: NVIDIA GStreamer 기반의 이미지 및 영상 캡처 도구이다.
+
+옵션 설명:
+--camsrc=0: 기본 카메라(0번 카메라)를 소스로 지정.
+--cap-dev-node=/dev/video0: /dev/video0 디바이스(카메라) 노드를 사용.
+
+(2) 실행 중 메시지
+실행 중 다음과 같은 메시지가 나타날 수 있습니다:
+```bash
+** Message: 19:50:52.158: <main:4648> iterating capture loop ....
+```
+이는 캡처 루프가 실행 중이라는 의미입니다.
+
+(3) 이미지 캡처
+캡처 버튼을 클릭하면 Image Captured 메시지가 표시되고, 이미지가 저장됩니다.
+
+(4) 저장된 이미지 확인
+저장된 이미지 파일은 홈 디렉토리 내 Pictures 폴더에 저장됩니다.
+예: Pictures/IMAGE_0000.jpg
+
+(5) 참고사항
+이미지를 성공적으로 캡처하려면 카메라가 정상적으로 연결되어 있어야 합니다.
+저장된 파일은 기본적으로 .jpg 형식이며, 파일명은 IMAGE_XXXX.jpg 형식으로 자동 생성됩니다.
+
+7. **자동 이미지 캡처 과정**
+(1) 자동 이미지 명령어 입력
+```bash
+nvgstcapture-1.0 --mode=1 --camsrc=0 --cap-dev-node=0 --automate --capture-auto
+```
+**옵션 설명:**
+--mode=1: 스틸 이미지 캡처 모드.
+--camsrc=0: 기본 카메라(0번 카메라)를 사용.
+--cap-dev-node=0: /dev/video0 디바이스 노드를 지정.
+--automate: 자동화된 캡처 실행.
+--capture-auto: 자동 캡처 실행 옵션
+
+(2) 실행 중 메시지
+```bash
+Encoder null, cannot set bitrate!
+Encoder Profile = High
+** Message: <main:4674> iterating capture loop ....
+```
+일부 메시지(Encoder null)는 무시해도 됩니다. 이는 실행에는 영향을 미치지 않습니다. 
+
+(3) 자동 캡처 완료
+캡처 과정이 완료되면 다음과 같은 메시지가 표시됩니다.
+
+```bash
+Image Captured
+** Message: Capture completed
+** Message: Camera application will now exit
+```
+
+8. **이미지 캡처 간단 설명**
+   
+(1) **명령어 실행**
+```bash
+nvgstcapture-1.0 --mode=1 --camsrc=0 --cap-dev-node=0
+```
+카메라에서 실시간 이미지를 표시.
+
+(2) **이미지 캡처**
+마우스를 클릭하여 이미지를 캡처.
+캡처 완료 후 Pictures 폴더에 저장 (IMAGE_0000.jpg 등).
+
+(3) **메시지 확인**
+```bash
+** Message: iterating capture loop ....
+Image Captured
+Capture completed
+```
+9. **영상 만들기**
+(1) **명령어 실행**
+```bash
+nvgstcapture-1.0 --mode=2 --camsrc=0 --cap-dev-node=0
+```
+옵션 설명:
+--mode=2: 영상 캡처 모드.
+--camsrc=0: 기본 카메라(0번) 사용.
+--cap-dev-node=0: /dev/video0 사용.
+
+(2) **실행결과 및 조작 방법**
+실행 시 다음과 같은 메시지가 표시된다.
+```
+Press '1' to start recording video
+Press '0' to stop recording video
+Press '2' to take a snapshot
+```
+조작 방법: '1' 영상 녹화 시작, '0' 녹화 중지, '2' 스냅샷 캡처
+
+(3) **저장 결과**
+녹화된 영상과 스냅샷은 Pictures 폴더에 저장됩니다.
+파일명: VIDEO_XXXX.mp4, IMAGE_XXXX.jpg
+
+
+
 
 1.8.19
 ![poster](./codescreenshot.png)
