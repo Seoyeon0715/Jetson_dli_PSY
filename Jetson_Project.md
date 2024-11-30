@@ -498,5 +498,5 @@ http://172.20.10.4:8888/lab/tree/classification/classification_interactive.ipynb
 
 
 ![poster](./241128-1.jpg)
-![poster](./241128-2.png)
+![poster](./241128-2.jpg)
 ![poster](./241128-3.jpg)
