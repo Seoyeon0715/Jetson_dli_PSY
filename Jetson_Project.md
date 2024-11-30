@@ -496,7 +496,24 @@ http://172.20.10.4:8888/lab/tree/classification/classification_interactive.ipynb
 ![image](https://github.com/user-attachments/assets/8d217135-a07a-4642-a5a4-977b1470b324)
 ![image](https://github.com/user-attachments/assets/75847c5d-b251-4e30-aac4-27de09b53754)
 
-
+1. **순서대로 삼각형 모양의 RUN 버튼을 눌러서 실행**
 ![poster](./241128-1.jpg)
+
+2. **메모리 스왑**
+메모리가 부족하기 때문에 에러가 발생합니다. classifiaction은 많은 메모리가 필요합니다. 메모리 스왑이 필요합니다.
+   
+3. **실시간 실행 위젯 설정**
+트레이너를 정의하고 위젯을 실행하여 트레이너를 제어합니다.
+
+4. **대화형 위젯 표시**
+대화형 도구에는 데이터 수집, 훈련 및 테스트를 위한 위젯이 포함되어 있습니다.
+![poster](./241128-4.jpg)
+
+5. **모델 훈련**
+thumbs_up과 thumpbs_down 경우의 다양한 dataset을 학습시킵니다.
 ![poster](./241128-2.jpg)
+
+6. **모델 테스트**
 ![poster](./241128-3.jpg)
+thumbs_down의 모습을 올바르게 예측하는 것을 확인할 수 있습니다.
+
