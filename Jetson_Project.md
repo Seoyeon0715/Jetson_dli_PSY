@@ -426,7 +426,7 @@ sudo docker run --runtime nvidia -it --rm --network host \
 /var/log/jupyter.log (컨테이너 내부)
 
 - JupyterLab 실행 중 발생한 로그를 확인하려면 이 경로를 참조하세요.
-
+![poster](./241121-1.jpg) 
 3. 작업 환경
 - 현재 컨테이너 내에서 루트 권한으로 작업 중입니다.
 
@@ -492,6 +492,8 @@ reboot
 9. **웹 브라우저를 열고 주소창에 얻은 접속 url 입력**
 http://172.20.10.4:8888/lab/tree/classification/classification_interactive.ipynb (이번 실습을 통해 실제로 얻은 주소창이다)
 
+
+
 ## 2. Thumbs Project - Image Classification Project
 ![image](https://github.com/user-attachments/assets/8d217135-a07a-4642-a5a4-977b1470b324)
 ![image](https://github.com/user-attachments/assets/75847c5d-b251-4e30-aac4-27de09b53754)
@@ -516,4 +518,306 @@ http://172.20.10.4:8888/lab/tree/classification/classification_interactive.ipynb
 6. **모델 테스트**
 - thumbs_down의 모습을 올바르게 예측하는 것을 확인할 수 있습니다.
 ![poster](./241128-3.jpg)
+
+## 3. Thumbs Project 세부 내용
+### Getting Started with AI on Jetson Nano
+
+### Interactive Classification Tool
+
+이 리포지토리는 NVIDIA DLI(Deep Learning Institute) 과정인 "젯슨 나노에서 AI 시작하기"의 일환으로 제공되는 대화형 데이터 수집, 훈련 및 테스트 도구입니다. 이 프로젝트는 Jetson Nano에서 실행되며 온라인 DLI 과정 페이지에 제공되는 세부 지침과 함께 사용할 수 있습니다.
+
+도구를 시작하려면 **카메라** 및 **작업** 코드 셀 정의를 설정한 다음 모든 셀을 실행하십시오. 노트북 하단에 있는 대화형 도구 위젯이 표시됩니다. 그런 다음 이 도구를 사용하여 반복적이고 대화형 방식으로 데이터를 수집하고, 데이터를 추가하고, 데이터를 훈련하고, 데이터를 테스트할 수 있습니다.
+
+### Camera
+
+먼저 카메라를 생성하고 `running`으로 설정합니다. 사용 중인 카메라 유형(USB 또는 CSI)에 따라 적절한 카메라 선택 라인을 주석 해제합니다. 이 셀을 실행하는 데 몇 초가 걸릴 수 있습니다.
+
+```python
+# Check device number
+!ls -ltrh /dev/video*
+
+from jetcam.usb_camera import USBCamera
+from jetcam.csi_camera import CSICamera
+
+# for USB Camera (Logitech C270 webcam), uncomment the following line
+camera = USBCamera(width=224, height=224, capture_device=0) # confirm the capture_device number
+
+# for CSI Camera (Raspberry Pi Camera Module V2), uncomment the following line
+# camera = CSICamera(width=224, height=224, capture_device=0) # confirm the capture_device number
+
+camera.running = True
+print("camera created")
+```
+
+## Task Definition
+
+프로젝트 작업 `TASK`과 수집할 데이터 범주 `CATEGORIES`를 정의합니다. 작성 중인 분류 작업에 대해 연결된 줄을 주석 해제하거나 수정하고 실행하십시오.
+
+```python
+import torchvision.transforms as transforms
+from dataset import ImageClassificationDataset
+
+TASK = 'thumbs'
+CATEGORIES = ['thumbs_up', 'thumbs_down']
+DATASETS = ['A', 'B']
+
+TRANSFORMS = transforms.Compose([
+    transforms.ColorJitter(0.2, 0.2, 0.2, 0.2),
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+])
+
+datasets = {}
+for name in DATASETS:
+    datasets[name] = ImageClassificationDataset('../data/classification/' + TASK + '_' + name, CATEGORIES, TRANSFORMS)
+
+print("{} task with {} categories defined".format(TASK, CATEGORIES))
+```
+
+### Data Collection
+
+아래 셀을 실행하여 데이터 수집 도구 위젯을 만드십시오. 이 셀을 실행하는 데 몇 초밖에 걸리지 않습니다.
+
+```python
+import ipywidgets
+import traitlets
+from IPython.display import display
+from jetcam.utils import bgr8_to_jpeg
+
+# initialize active dataset
+dataset = datasets[DATASETS[0]]
+
+# unobserve all callbacks from camera in case we are running this cell for second time
+camera.unobserve_all()
+
+# create image preview
+camera_widget = ipywidgets.Image()
+traitlets.dlink((camera, 'value'), (camera_widget, 'value'), transform=bgr8_to_jpeg)
+
+# create widgets
+dataset_widget = ipywidgets.Dropdown(options=DATASETS, description='dataset')
+category_widget = ipywidgets.Dropdown(options=dataset.categories, description='category')
+count_widget = ipywidgets.IntText(description='count')
+save_widget = ipywidgets.Button(description='add')
+
+# manually update counts at initialization
+count_widget.value = dataset.get_count(category_widget.value)
+
+# sets the active dataset
+def set_dataset(change):
+    global dataset
+    dataset = datasets[change['new']]
+    count_widget.value = dataset.get_count(category_widget.value)
+dataset_widget.observe(set_dataset, names='value')
+
+# update counts when we select a new category
+def update_counts(change):
+    count_widget.value = dataset.get_count(change['new'])
+category_widget.observe(update_counts, names='value')
+
+# save image for category and update counts
+def save(c):
+    dataset.save_entry(camera.value, category_widget.value)
+    count_widget.value = dataset.get_count(category_widget.value)
+save_widget.on_click(save)
+
+data_collection_widget = ipywidgets.VBox([
+    ipywidgets.HBox([camera_widget]), dataset_widget, category_widget, count_widget, save_widget
+])
+
+print("data_collection_widget created")
+```
+
+### Model Configuration
+
+다음 셀을 실행하여 뉴럴 네트워크를 정의하고 프로젝트에 필요한 출력과 일치하도록 완전히 연결된 레이어(`fc`)를 조정합니다.
+
+```python
+import torch
+import torchvision
+
+device = torch.device('cuda')
+
+# RESNET 18
+model = torchvision.models.resnet18(pretrained=True)
+model.fc = torch.nn.Linear(512, len(dataset.categories))
+
+model = model.to(device)
+
+model_save_button = ipywidgets.Button(description='save model')
+model_load_button = ipywidgets.Button(description='load model')
+model_path_widget = ipywidgets.Text(description='model path', value='/nvdli-nano/data/classification/my_model.pth')
+
+def load_model(c):
+    model.load_state_dict(torch.load(model_path_widget.value))
+model_load_button.on_click(load_model)
+
+def save_model(c):
+    torch.save(model.state_dict(), model_path_widget.value)
+model_save_button.on_click(save_model)
+
+model_widget = ipywidgets.VBox([
+    model_path_widget,
+    ipywidgets.HBox([model_load_button, model_save_button])
+])
+
+print("model configured and model_widget created")
+```
+
+### Live Execution
+
+아래 셀을 실행하여 실시간 실행 위젯을 설정하십시오.
+
+```python
+import threading
+import time
+from utils import preprocess
+import torch.nn.functional as F
+
+state_widget = ipywidgets.ToggleButtons(options=['stop', 'live'], description='state', value='stop')
+prediction_widget = ipywidgets.Text(description='prediction')
+score_widgets = []
+for category in dataset.categories:
+    score_widget = ipywidgets.FloatSlider(min=0.0, max=1.0, description=category, orientation='vertical')
+    score_widgets.append(score_widget)
+
+def live(state_widget, model, camera, prediction_widget, score_widget):
+    global dataset
+    while state_widget.value == 'live':
+        image = camera.value
+        preprocessed = preprocess(image)
+        output = model(preprocessed)
+        output = F.softmax(output, dim=1).detach().cpu().numpy().flatten()
+        category_index = output.argmax()
+        prediction_widget.value = dataset.categories[category_index]
+        for i, score in enumerate(list(output)):
+            score_widgets[i].value = score
+
+def start_live(change):
+    if change['new'] == 'live':
+        execute_thread = threading.Thread(target=live, args=(state_widget, model, camera, prediction_widget, score_widget))
+        execute_thread.start()
+
+state_widget.observe(start_live, names='value')
+
+live_execution_widget = ipywidgets.VBox([
+    ipywidgets.HBox(score_widgets),
+    prediction_widget,
+    state_widget
+])
+
+print("live_execution_widget created")
+```
+
+### Training and Evaluation
+
+다음 셀을 실행하여 트레이너를 정의하고 위젯을 실행하여 트레이너를 제어합니다.
+
+```python
+BATCH_SIZE = 8
+
+optimizer = torch.optim.Adam(model.parameters())
+epochs_widget = ipywidgets.IntText(description='epochs', value=1)
+eval_button = ipywidgets.Button(description='evaluate')
+train_button = ipywidgets.Button(description='train')
+loss_widget = ipywidgets.FloatText(description='loss')
+accuracy_widget = ipywidgets.FloatText(description='accuracy')
+progress_widget = ipywidgets.FloatProgress(min=0.0, max=1.0, description='progress')
+
+def train_eval(is_training):
+    global model, dataset, optimizer, eval_button, train_button, accuracy_widget, loss_widget, progress_widget, state_widget
+    try:
+        train_loader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=BATCH_SIZE,
+            shuffle=True
+        )
+        state_widget.value = 'stop'
+        train_button.disabled = True
+        eval_button.disabled = True
+        time.sleep(1)
+        if is_training:
+            model = model.train()
+        else:
+            model = model.eval()
+        while epochs_widget.value > 0:
+            i = 0
+            sum_loss = 0.0
+            error_count = 0.0
+            for images, labels in iter(train_loader):
+                images = images.to(device)
+                labels = labels.to(device)
+                if is_training:
+                    optimizer.zero_grad()
+                outputs = model(images)
+                loss = F.cross_entropy(outputs, labels)
+                if is_training:
+                    loss.backward()
+                    optimizer.step()
+                error_count += len(torch.nonzero(outputs.argmax(1) - labels).flatten())
+                count = len(labels.flatten())
+                i += count
+                sum_loss += float(loss)
+                progress_widget.value = i / len(dataset)
+                loss_widget.value = sum_loss / i
+                accuracy_widget.value = 1.0 - error_count / i
+            if is_training:
+                epochs_widget.value = epochs_widget.value - 1
+            else:
+                break
+    except Exception as e:
+        pass
+    model = model.eval()
+    train_button.disabled = False
+    eval_button.disabled = False
+    state_widget.value = 'live'
+
+train_button.on_click(lambda c: train_eval(is_training=True))
+eval_button.on_click(lambda c: train_eval(is_training=False))
+
+train_eval_widget = ipywidgets.VBox([
+    epochs_widget,
+    progress_widget,
+    loss_widget,
+    accuracy_widget,
+    ipywidgets.HBox([train_button, eval_button])
+])
+
+print("trainer configured and train_eval_widget created")
+```
+
+### Display the Interactive Tool
+
+아래 셀을 실행하여 전체 대화형 위젯을 만들고 표시합니다.
+
+```python
+all_widget = ipywidgets.VBox([
+    ipywidgets.HBox([data_collection_widget, live_execution_widget]),
+    train_eval_widget,
+    model_widget
+])
+
+display(all_widget)
+```
+
+## Before you go...
+
+카메라 및/또는 노트북 커널을 종료하여 카메라 리소스를 해제합니다.
+
+```python
+import os
+import IPython
+
+if type(camera) is CSICamera:
+    print("Ignore 'Exception in thread' tracebacks\n")
+    camera.cap.release()
+
+os._exit(00)
+```
+
+다음 지시사항을 보려면 DLI 과정 페이지로 돌아가십시오.
+
+
+
 
