@@ -497,6 +497,6 @@ http://172.20.10.4:8888/lab/tree/classification/classification_interactive.ipynb
 ![image](https://github.com/user-attachments/assets/75847c5d-b251-4e30-aac4-27de09b53754)
 
 
-![poster](./241128-1.png)
+![poster](./241128-1.jpg)
 ![poster](./241128-2.png)
-![poster](./241128-3.png)
+![poster](./241128-3.jpg)
