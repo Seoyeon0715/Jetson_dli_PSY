@@ -507,7 +507,7 @@ http://172.20.10.4:8888/lab/tree/classification/classification_interactive.ipynb
 
 4. **대화형 위젯 표시**
 대화형 도구에는 데이터 수집, 훈련 및 테스트를 위한 위젯이 포함되어 있습니다.
-![poster](./241128-4.jpg)
+![poster](./241128-4.png)
 
 5. **모델 훈련**
 thumbs_up과 thumpbs_down 경우의 다양한 dataset을 학습시킵니다.
