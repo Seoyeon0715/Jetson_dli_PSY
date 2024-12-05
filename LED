@@ -1,0 +1,35 @@
+const int sensorPin = A0; // 토양 수분 센서의 아날로그 출력 핀
+const int redPin = 9;     // RGB LED의 빨간색 핀
+const int greenPin = 10;  // RGB LED의 초록색 핀
+const int bluePin = 11;   // RGB LED의 파란색 핀
+
+void setup() {
+  pinMode(redPin, OUTPUT);   // 빨간색 LED 핀을 출력으로 설정
+  pinMode(greenPin, OUTPUT); // 초록색 LED 핀을 출력으로 설정
+  pinMode(bluePin, OUTPUT);  // 파란색 LED 핀을 출력으로 설정
+  Serial.begin(9600);        // 시리얼 통신 시작
+}
+
+void loop() {
+  int sensorValue = analogRead(sensorPin); // 센서 값 읽기
+  Serial.print("Soil Moisture Value: ");
+  Serial.println(sensorValue); // 시리얼 모니터에 센서 값 출력
+
+  if (sensorValue > 700) { // 물이 부족한 상태
+    setColor(0, 255, 255);   // 빨간색 LED 켜기 (공통 아노드이므로 LOW가 켜짐)
+  } 
+  if (sensorValue <= 700 && sensorValue > 400) { // 적정 수분 상태
+    setColor(255, 0, 255);   // 초록색 LED 켜기
+  } 
+  if (sensorValue <= 400) { // 과습 상태
+    setColor(255, 255, 0);   // 파란색 LED 켜기
+  }
+
+  delay(1000); // 1초 대기
+}
+
+void setColor(int red, int green, int blue) {
+  analogWrite(redPin, red);   // 공통 아노드 방식에서는 LOW가 켜짐
+  analogWrite(greenPin, green);
+  analogWrite(bluePin, blue);
+}
