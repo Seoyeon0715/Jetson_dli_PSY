@@ -1,0 +1,24 @@
+```bash
+// 토양 수분 센서가 연결된 아날로그 핀
+const int sensorPin = A0;
+
+// 읽어온 수분 값 변수
+int moistureValue;
+
+void setup() {
+  // 시리얼 통신 초기화
+  Serial.begin(9600);
+}
+
+void loop() {
+  // 센서 값 읽기 (0 ~ 1023 범위)
+  moistureValue = analogRead(sensorPin);
+
+  // 읽어온 값 출력
+  Serial.print("Soil Moisture Value: ");
+  Serial.println(moistureValue);
+
+  // 1초 대기
+  delay(1000);
+}
+```
