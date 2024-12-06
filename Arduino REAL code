@@ -1,59 +1,196 @@
 # 1. Soil Moisture Sensor Code
+```bash
+// Soil Moisture Sensor Code for Arduino to A1 Communication
+// 토양 수분 센서 Arduino-A1 통신 코드
+
+const int sensorPin = A1;  // Analog pin for soil moisture sensor
+const int dryValue = 520;  // Calibrated dry soil value
+const int wetValue = 260;  // Calibrated wet soil value
+
+void setup() {
+  Serial.begin(9600);  // Initialize serial communication
+  // A1과의 통신을 위해 시리얼 통신 초기화
+  
+  pinMode(sensorPin, INPUT);  // Set sensor pin as input
+  // 센서 핀을 입력 모드로 설정
+}
+
+void loop() {
+  // Read and average sensor value to reduce noise
+  // 노이즈 감소를 위해 센서 값 평균 계산
+  int sensorValue = getAverageSensorValue(sensorPin, 10);
+  
+  // Map sensor value to moisture percentage
+  // 센서 값을 0-100% 수분 퍼센트로 변환
+  int moisturePercent = map(sensorValue, dryValue, wetValue, 0, 100);
+  
+  // Constrain moisture percentage to 0-100 range
+  // 수분 퍼센트를 0-100 범위로 제한
+  moisturePercent = constrain(moisturePercent, 0, 100);
+  
+  // Prepare JSON-like message for A1 device
+  // A1 장치를 위한 JSON 형식 메시지 준비
+  String message = "{\"sensor\":\"soil_moisture\",\"value\":" + 
+                   String(moisturePercent) + 
+                   ",\"status\":\"";
+  
+  // Determine moisture status
+  // 수분 상태 판단
+  if (moisturePercent < 30) {
+    message += "critical_low\"}";
+    Serial.println(message);
+  } else if (moisturePercent < 40) {
+    message += "low\"}";
+    Serial.println(message);
+  } else if (moisturePercent >= 40 && moisturePercent <= 60) {
+    message += "optimal\"}";
+    Serial.println(message);
+  } else if (moisturePercent > 60 && moisturePercent <= 90) {
+    message += "high\"}";
+    Serial.println(message);
+  } else {
+    message += "flooded\"}";
+    Serial.println(message);
+  }
+  
+  // Wait for 5 seconds between readings
+  // 5초마다 readings 수행
+  delay(5000);
+}
+
+// Function to get average sensor value
+// 평균 센서 값을 얻는 함수
+int getAverageSensorValue(int pin, int samples) {
+  long total = 0;
+  for (int i = 0; i < samples; i++) {
+    total += analogRead(pin);
+    delay(10);  // Small delay between readings
+  }
+  return total / samples;
+}
+```
+
 
 
 # 2. Light Intensity Sensor Code
+```bash
+const int lightSensorPin = 8; // Light sensor connected to analog pin
 
+// Number of samples for averaging
+const int NUM_SAMPLES = 10;
+
+void setup() {
+  Serial.begin(9600); // Initialize serial communication
+  pinMode(lightSensorPin, INPUT); // Set light sensor pin as input
+}
+
+// Function to get stable and averaged sensor reading
+int getStableLightReading() {
+  long total = 0;
+  int samples[NUM_SAMPLES];
+  
+  // Collect samples
+  for (int i = 0; i < NUM_SAMPLES; i++) {
+    samples[i] = analogRead(lightSensorPin);
+    delay(10); // Small delay between readings
+  }
+  
+  // Sort samples
+  for (int i = 0; i < NUM_SAMPLES - 1; i++) {
+    for (int j = i + 1; j < NUM_SAMPLES; j++) {
+      if (samples[i] > samples[j]) {
+        // Swap values
+        int temp = samples[i];
+        samples[i] = samples[j];
+        samples[j] = temp;
+      }
+    }
+  }
+  
+  // Remove extreme values (lowest and highest)
+  long sum = 0;
+  for (int i = 2; i < NUM_SAMPLES - 2; i++) {
+    sum += samples[i];
+  }
+  
+  // Calculate average
+  return sum / (NUM_SAMPLES - 4);
+}
+
+void loop() {
+  // Get stable light reading
+  int sensorValue = getStableLightReading();
+  
+  // Convert to percentage with more precise mapping
+  int brightnessPercent = map(sensorValue, 0, 1023, 0, 100);
+  
+  // Additional interpretation
+  String lightIntensity;
+  if (brightnessPercent < 20) {
+    lightIntensity = "Dark";
+  } else if (brightnessPercent < 40) {
+    lightIntensity = "Low Light";
+  } else if (brightnessPercent < 60) {
+    lightIntensity = "Moderate Light";
+  } else if (brightnessPercent < 80) {
+    lightIntensity = "Bright";
+  } else {
+    lightIntensity = "Very Bright";
+  }
+  
+  // Send data via serial communication
+  Serial.print("Raw Value: ");
+  Serial.print(sensorValue);
+  Serial.print(" | Brightness: ");
+  Serial.print(brightnessPercent);
+  Serial.print("% | Condition: ");
+  Serial.println(lightIntensity);
+  
+  delay(1000); // Wait for 1 second between readings
+}
+```
 
 # 3. dht11 temp & humidity Sensor Code
-
-https://blog.naver.com/happyyhj/222051729017 
-
-arduino-cli version
-arduino --version
-
-21:34:20.309
+보류 보류
 
 
-3. 라이브러리 관리자 설정 문제
-Arduino IDE의 환경 설정 또는 경로 문제가 원인일 수 있습니다.
-
-환경 설정 초기화
-환경 설정 파일 제거:
-```bash
-rm -rf ~/.arduino15
-```
-Arduino IDE를 다시 실행하면 기본 설정이 새로 생성됩니다.
+#4. 토양수분센서 csv 파일로 불러오는 작업 코드 (jupyter notebook 가상환경에서 작업함)
 
 
-권한 문제
-Arduino IDE가 설치된 경로에 쓰기 권한이 없으면 라이브러리 관리자가 비활성화될 수 있습니다. 경로 확인:
-```bash
-ls -ld /opt/arduino
-```
-필요한 경우, 쓰기 권한 추가:
-```bash
-sudo chmod -R a+w /opt/arduino
-```
+import serial
+import time
+import pandas as pd
 
-4. 그래픽 인터페이스 문제
-라이브러리 관리자가 표시되지 않는 이유가 GUI 렌더링 문제일 수 있습니다.
+# 직렬 통신 설정
+port = "/dev/ttyUSB0"  # 아두이노의 직렬 포트
+baudrate = 9600        # 아두이노와 동일한 보드레이트
+arduino = serial.Serial(port, baudrate, timeout=1)
 
-Java 문제 확인
-Arduino IDE는 Java를 사용하므로 Java 런타임 문제일 가능성이 있습니다:
-```bash
-java -version
-```
-설치되지 않았다면:
-```bash
-sudo apt install default-jre
-```
-렌더링 모드 강제 설정
-Arduino IDE의 렌더링 모드를 변경해 보세요:
+# 데이터 저장용 리스트
+data = []
 
-환경 설정 파일 열기:
-```bash
-nano ~/.arduino15/preferences.txt
-```
-다음 줄 추가:
-kotlin
-editor.external=false
+try:
+    print("Collecting data from Arduino... Press Ctrl+C to stop.")
+    while True:
+        if arduino.in_waiting > 0:  # 데이터가 직렬 포트에 들어왔는지 확인
+            line = arduino.readline().decode("utf-8").strip()  # 데이터 읽기 및 디코딩
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")    # 현재 시간 생성
+            print(f"{timestamp}, Moisture: {line}%")
+            
+            # 데이터 저장
+            data.append({"Timestamp": timestamp, "Moisture (%)": line})
+
+except KeyboardInterrupt:
+    print("Data collection stopped.")
+
+finally:
+    # 데이터프레임 생성
+    df = pd.DataFrame(data)
+
+    # 데이터프레임을 CSV 파일로 저장
+    df.to_csv("sensor_data.csv", index=False, encoding="utf-8")
+    print("Data saved to sensor_data.csv")
+
+    
+    # 포트 닫기
+    arduino.close()
