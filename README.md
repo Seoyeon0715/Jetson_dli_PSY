@@ -461,8 +461,182 @@ port: 센서가 연결된 포트.
 baudrate: 센서와의 통신 속도.
 duration: 데이터 수집 지속 시간.
 check_arduino_status
-
 아두이노가 정상적으로 작동하는지 확인합니다.
 port: 아두이노가 연결된 포트.
 baudrate: 아두이노와의 통신 속도.
 test_duration: 테스트 실행 시간
+
+
+
+아두이노 코드: 조도 센서 데이터 전송
+Jetson Nano에서 Python 코드 작성
+Function Calling Definition
+use_functions JSON 정의
+
+
+## 0. Python 라이브러리 설치
+Jetson Nano에서 DHT11 센서를 사용하려면 Adafruit_DHT 라이브러리가 필요합니다. 터미널에서 다음 명령을 실행하세요:
+**pip install Adafruit_DHT**
+
+
+## 1. 아두이노 코드: 온습도 센서(DHT11) 데이터 전송
+
+```bash
+#include "DHT.h"
+
+#define DHTPIN 2     // DHT 센서가 연결된 핀
+#define DHTTYPE DHT11  // DHT11 센서 유형
+
+DHT dht(DHTPIN, DHTTYPE);
+
+void setup() {
+  Serial.begin(9600);  // 직렬 통신 시작
+  dht.begin();         // DHT 센서 초기화
+}
+
+void loop() {
+  float humidity = dht.readHumidity();    // 습도 읽기
+  float temperature = dht.readTemperature();  // 온도 읽기
+
+  // 센서 읽기 오류 처리
+  if (isnan(humidity) || isnan(temperature)) {
+    Serial.println("Failed to read from DHT sensor!");
+    return;
+  }
+
+  // 데이터를 직렬 통신으로 전송
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.print("°C, ");
+  Serial.print("Humidity: ");
+  Serial.print(humidity);
+  Serial.println("%");
+
+  delay(2000);  // 2초 대기
+}
+```
+
+## 2. Jetson Nano에서 Python 코드 작성
+
+```bash
+import serial
+import time
+import pandas as pd
+
+def dht11_sensor_info(mode='real-time', file_path=None, port='/dev/ttyUSB0', baudrate=9600):
+    """
+    DHT11 센서 데이터를 처리하는 함수.
+
+    Args:
+        mode (str): 'real-time'이면 센서에서 데이터를 읽고, 'file'이면 엑셀 파일에서 데이터를 읽음.
+        file_path (str): 파일 경로 (mode='file'일 때 필수).
+        port (str): 아두이노가 연결된 직렬 포트.
+        baudrate (int): 직렬 통신 속도.
+
+    Returns:
+        str: 온습도 데이터 정보 또는 오류 메시지.
+    """
+    if mode == 'real-time':
+        try:
+            # 아두이노와 직렬 통신 설정
+            arduino = serial.Serial(port, baudrate, timeout=1)
+            time.sleep(2)  # 아두이노 초기화 대기
+            
+            if arduino.in_waiting > 0:
+                line = arduino.readline().decode('utf-8').strip()  # 데이터 읽기 및 디코딩
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")    # 현재 시간 기록
+                arduino.close()
+                return str({'timestamp': timestamp, 'data': line})
+            else:
+                return str({'error': 'No data available from sensor.'})
+        except Exception as e:
+            return str({'error': str(e)})
+
+    elif mode == 'file':
+        try:
+            if not file_path:
+                return str({'error': 'File path is required in file mode.'})
+            # 엑셀 파일 읽기
+            df = pd.read_excel(file_path)
+            if df.empty:
+                return str({'error': 'No data available in the file.'})
+            # 가장 최근 데이터 반환
+            latest_entry = df.iloc[-1].to_dict()
+            return str({
+                'timestamp': latest_entry['Timestamp'],
+                'temperature': f"{latest_entry['Temperature']}°C",
+                'humidity': f"{latest_entry['Humidity']}%"
+            })
+        except Exception as e:
+            return str({'error': str(e)})
+
+    else:
+        return str({'error': 'Invalid mode. Use "real-time" or "file".'})
+```
+
+## 3. Function Calling Definition
+
+```bash
+def execute_function_call(function_data, args):
+    """
+    Executes a function based on provided metadata and arguments.
+
+    Args:
+        function_data (dict): Metadata for the function to call.
+        args (dict): Arguments for the function call.
+
+    Returns:
+        str: The result of the function execution.
+    """
+    function_name = function_data["function"]["name"]
+    
+    if function_name == "dht11_sensor_info":
+        return dht11_sensor_info(
+            mode=args.get("mode"),
+            file_path=args.get("file_path"),
+            port=args.get("port", "/dev/ttyUSB0"),
+            baudrate=args.get("baudrate", 9600)
+        )
+    else:
+        return str({"error": f"Function {function_name} is not implemented."})
+```
+
+## 4. use_functions JSON 정의
+
+```bash
+use_functions = [
+    {
+        "type": "function",
+        "function": {
+            "name": "dht11_sensor_info",
+            "description": "Retrieves temperature and humidity data either in real-time from a DHT11 sensor or from a file.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "mode": {
+                        "type": "string",
+                        "description": "'real-time' for live data from the DHT11 sensor or 'file' for data from an Excel file.",
+                        "enum": ["real-time", "file"]
+                    },
+                    "file_path": {
+                        "type": "string",
+                        "description": "The path to the Excel file containing temperature and humidity data (required if mode is 'file').",
+                        "nullable": True
+                    },
+                    "port": {
+                        "type": "string",
+                        "description": "The serial port to which the sensor is connected (required if mode is 'real-time').",
+                        "nullable": True
+                    },
+                    "baudrate": {
+                        "type": "integer",
+                        "description": "The baud rate for serial communication with the sensor. Default is 9600.",
+                        "nullable": True
+                    }
+                },
+                "required": ["mode"]
+            }
+        }
+    }
+]
+```
