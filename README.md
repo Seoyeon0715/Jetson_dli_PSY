@@ -475,7 +475,16 @@ use_functions JSON 정의
 
 
 https://github.com/adafruit/DHT-sensor-library
+
 https://github.com/adafruit/Adafruit_Sensor
+
+arduino-cli lib install "DHT sensor library"
+arduino-cli lib install "Adafruit Unified Sensor"
+arduino-cli compile --fqbn arduino:avr:uno YourSketch.ino
+arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:uno YourSketch.ino
+
+
+
 
 ## 0. Python 라이브러리 설치
 Jetson Nano에서 DHT11 센서를 사용하려면 Adafruit_DHT 라이브러리가 필요합니다. 터미널에서 다음 명령을 실행하세요:
