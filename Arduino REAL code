@@ -7,3 +7,6 @@
 # 3. dht11 temp & humidity Sensor Code
 
 https://blog.naver.com/happyyhj/222051729017 
+
+arduino-cli version
+arduino --version
