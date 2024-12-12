@@ -476,7 +476,45 @@ void loop() {
 ```
 
 # 3. dht11 temp & humidity Sensor Code
-보류 보류
+```bash
+#include <SimpleDHT.h>
+
+// Pin number where the DHT data pin is connected
+int pinDHT = 2;
+
+// Initialize the DHT11 sensor using the SimpleDHT library
+SimpleDHT11 dht11;
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("Starting DHT11 Test!");
+}
+
+void loop() {
+  // Variables to store temperature and humidity data
+  byte temperature = 0;
+  byte humidity = 0;
+
+  // Read data from the DHT11 sensor
+  int err = dht11.read(pinDHT, &temperature, &humidity, NULL);
+  if (err != SimpleDHTErrSuccess) {
+    Serial.print("Read error: ");
+    Serial.println(err);
+    delay(1000);
+    return;
+  }
+
+  // Print humidity and temperature values
+  Serial.print("Humidity: ");
+  Serial.print(humidity);
+  Serial.print("% ");
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.println("C");
+
+  delay(2000); // Wait for 2 seconds
+}
+```
 
 
 #4. 토양수분센서 csv 파일로 불러오는 작업 코드 (jupyter notebook 가상환경에서 작업함)
