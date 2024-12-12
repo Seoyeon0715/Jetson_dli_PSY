@@ -1,1 +1,43 @@
+def light_sensor_info(mode='real-time', file_path=None, port='/dev/ttyUSB0', baudrate=9600):
+    """
+    조도 센서 데이터를 처리하고 반환하는 함수.
+    """
+    if mode == 'real-time':
+        try:
+            # 직렬 통신 설정
+            arduino = serial.Serial(port, baudrate, timeout=1)
+            time.sleep(2)  # 포트 안정화
+
+            if arduino.in_waiting > 0:
+                # 데이터 읽기
+                data = arduino.readline().decode("utf-8").strip()
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+
+                # 데이터 파싱
+                if "Brightness:" in data:
+                    # 데이터 분리
+                    parts = data.split("|")
+                    raw_value = parts[0].split(":")[1].strip()  # Raw Value 추출
+                    brightness = parts[1].split(":")[1].strip()  # Brightness 추출
+                    condition = parts[2].split(":")[1].strip()   # Condition 추출
+
+                    arduino.close()
+
+                    # 결과 반환
+                    return str({
+                        'timestamp': timestamp,
+                        'raw_value': raw_value,
+                        'brightness': brightness,
+                        'condition': condition
+                    })
+                else:
+                    return str({'error': f"Unexpected data format: {data}"})
+
+            else:
+                return str({'error': 'No data available from sensor.'})
+
+        except Exception as e:
+            return str({'error': str(e)})
+    else:
+        return str({'error': 'Invalid mode. Use "real-time".'})
 
