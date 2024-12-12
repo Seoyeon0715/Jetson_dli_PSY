@@ -1,65 +1,59 @@
-def light_sensor_info(mode='real-time', file_path=None, port='/dev/ttyUSB0', baudrate=9600):
-    """
-    조도 센서 데이터를 처리하고 반환하는 함수.
-    """
-    if mode == 'real-time':
-        try:
-            # 직렬 통신 설정
-            arduino = serial.Serial(port, baudrate, timeout=1)
-            time.sleep(2)  # 포트 안정화
+import serial
+import time
+import pandas as pd
 
-            if arduino.in_waiting > 0:
-                # 데이터 읽기
-                data = arduino.readline().decode("utf-8").strip()
-                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+# 직렬 통신 설정
+port = "/dev/ttyUSB0"  # 아두이노의 직렬 포트
+baudrate = 9600        # 아두이노와 동일한 보드레이트
+arduino = serial.Serial(port, baudrate, timeout=1)
 
-                # 데이터 파싱
-                if "Brightness:" in data:
-                    # 데이터 분리
-                    parts = data.split("|")
-                    raw_value = parts[0].split(":")[1].strip()  # Raw Value 추출
-                    brightness = parts[1].split(":")[1].strip()  # Brightness 추출
-                    condition = parts[2].split(":")[1].strip()   # Condition 추출
+# 데이터 저장용 리스트
+data = []
 
-                    arduino.close()
+# 마지막 저장 시간 초기화
+last_save_time = time.time()
 
-                    # 결과 반환
-                    return str({
-                        'timestamp': timestamp,
-                        'raw_value': raw_value,
-                        'brightness': brightness,
-                        'condition': condition
-                    })
-                else:
-                    return str({'error': f"Unexpected data format: {data}"})
+# 저장 간격 (초) - 2시간 = 7200초
+save_interval = 7200
 
-            else:
-                return str({'error': 'No data available from sensor.'})
+try:
+    print("Collecting data from Arduino... Press Ctrl+C to stop.")
+    while True:
+        if arduino.in_waiting > 0:  # 데이터가 직렬 포트에 들어왔는지 확인
+            line = arduino.readline().decode("utf-8").strip()  # 데이터 읽기 및 디코딩
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")    # 현재 시간 생성
+            print(f"{timestamp}, Moisture: {line}%")
+            
+            # 데이터 저장
+            data.append({"Timestamp": timestamp, "Moisture (%)": line})
+            
+            # 현재 시간과 마지막 저장 시간 비교
+            current_time = time.time()
+            if current_time - last_save_time >= save_interval:  # 저장 간격 초과 시
+                # 데이터프레임 생성
+                df = pd.DataFrame(data)
+                
+                # 파일명 생성 (현재 날짜와 시간 기반)
+                file_name = time.strftime("sensor_data_%Y-%m-%d_%H-%M-%S.csv")
+                
+                # 데이터프레임을 CSV 파일로 저장
+                df.to_csv(file_name, index=False, encoding="utf-8")
+                print(f"Data saved to {file_name}")
+                
+                # 저장된 데이터를 초기화하고 마지막 저장 시간 갱신
+                data = []
+                last_save_time = current_time
 
-        except Exception as e:
-            return str({'error': str(e)})
+except KeyboardInterrupt:
+    print("Data collection stopped.")
 
-    elif mode == 'file':
-        try:
-            if not file_path:
-                return {'error': 'File path is required in file mode.'}
-
-            # CSV 파일 읽기
-            df = pd.read_csv(file_path)
-
-            if df.empty:
-                return {'error': 'No data available in the file.'}
-
-            # 가장 최근 데이터 추출
-            latest_entry = df.iloc[-1].to_dict()
-            return {
-                'timestamp': latest_entry['Timestamp'],
-                'brightness': f"{latest_entry['Moisture (%)']}%"
-            }
-        except Exception as e:
-            return {'error': str(e)}
-
-    else:
-        return {'error': 'Invalid mode. Use "real-time" or "file".'}
-
-
+finally:
+    # 마지막으로 남은 데이터를 저장
+    if data:
+        df = pd.DataFrame(data)
+        file_name = time.strftime("sensor_data_%Y-%m-%d_%H-%M-%S.csv")
+        df.to_csv(file_name, index=False, encoding="utf-8")
+        print(f"Final data saved to {file_name}")
+    
+    # 포트 닫기
+    arduino.close()
