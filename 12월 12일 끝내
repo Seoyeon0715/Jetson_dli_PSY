@@ -8,3 +8,42 @@ dcrc@dcrc:~$ ls
 
 dcrc@dcrc:~$ arduino
 /usr/local/bin/arduino: line 35: /home/dcrc/arduino-1.8.19/java/bin/java: No such file or directory
+________________________________________________________
+
+#include <SimpleDHT.h>
+
+// DHT 데이터 핀이 연결된 Arduino 핀
+int pinDHT = 2;
+
+// DHT11 센서를 SimpleDHT 라이브러리를 사용하여 초기화
+SimpleDHT11 dht11;
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("DHT11 테스트 시작!");
+}
+
+void loop() {
+  // 온도 및 습도 데이터를 저장할 변수
+  byte temperature = 0;
+  byte humidity = 0;
+
+  // DHT11 데이터를 읽음
+  int err = dht11.read(pinDHT, &temperature, &humidity, NULL);
+  if (err != SimpleDHTErrSuccess) {
+    Serial.print("읽기 오류: ");
+    Serial.println(err);
+    delay(1000);
+    return;
+  }
+
+  // 온도 및 습도 출력
+  Serial.print("습도: ");
+  Serial.print(humidity);
+  Serial.print("% ");
+  Serial.print("온도: ");
+  Serial.print(temperature);
+  Serial.println("C");
+
+  delay(2000); // 2초 대기
+}
