@@ -74,3 +74,17 @@ Traceback (most recent call last):
   File "/home/dcrc/myenv2/lib/python3.8/site-packages/openai/_client.py", line 105, in __init__
     raise OpenAIError(
 openai.OpenAIError: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable
+
+
+
+
+
+
+
+
+
+
+
+
+
+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
