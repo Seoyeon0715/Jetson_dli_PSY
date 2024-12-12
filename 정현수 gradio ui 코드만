@@ -1,0 +1,193 @@
+# 필수 라이브러리 설치
+!pip install openai
+!pip install gradio
+!pip install pyserial
+
+
+# Import
+import gradio as gr
+import pandas as pd
+import serial
+import time
+import json
+from openai import OpenAI
+
+# OpenAI API 키 설정
+OpenAI.api_key = "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"
+
+def moisture_sensor_info(mode='real-time', file_path=None, port='/dev/ttyUSB0', baudrate=9600):
+    """
+    토양 수분 센서 데이터를 처리하고 반환하는 함수.
+    """
+    if mode == 'real-time':
+        try:
+            # 직렬 통신 설정
+            arduino = serial.Serial(port, baudrate, timeout=1)
+            if arduino.in_waiting > 0:
+                data = arduino.readline().decode('utf-8').strip()  # 데이터 읽기
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")   # 현재 시간
+                arduino.close()
+                return str({'timestamp': timestamp, 'moisture': f"{data}%"})
+            else:
+                return str({'error': 'No data available from sensor.'})
+        except Exception as e:
+            return str({'error': str(e)})
+
+    elif mode == 'file':
+        try:
+            if not file_path:
+                return str({'error': 'File path is required in file mode.'})
+            df = pd.read_excel(file_path)
+            if df.empty:
+                return str({'error': 'No data available in the file.'})
+            latest_entry = df.iloc[-1].to_dict()
+            return str({'timestamp': latest_entry['Timestamp'], 'moisture': f"{latest_entry['Moisture (%)']}%"})
+        except Exception as e:
+            return str({'error': str(e)})
+
+    else:
+        return str({'error': 'Invalid mode. Use "real-time" or "file".'})
+
+
+def light_sensor_info(mode='real-time', file_path=None, port='/dev/ttyUSB0', baudrate=9600):
+    """
+    조도 센서 데이터를 처리하고 반환하는 함수.
+    """
+    if mode == 'real-time':
+        try:
+            # 직렬 통신 설정
+            arduino = serial.Serial(port, baudrate, timeout=1)
+            time.sleep(2)  # 포트 안정화
+            if arduino.in_waiting > 0:
+                data = arduino.readline().decode("utf-8").strip()  # 데이터 읽기
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")    # 현재 시간
+                arduino.close()
+                return str({'timestamp': timestamp, 'brightness': f"{data.split(': ')[1]}%"})
+            else:
+                return str({'error': 'No data available from sensor.'})
+        except Exception as e:
+            return str({'error': str(e)})
+
+    elif mode == 'file':
+        try:
+            if not file_path:
+                return str({'error': 'File path is required in file mode.'})
+            df = pd.read_excel(file_path)
+            if df.empty:
+                return str({'error': 'No data available in the file.'})
+            latest_entry = df.iloc[-1].to_dict()
+            return str({'timestamp': latest_entry['Timestamp'], 'brightness': f"{latest_entry['Brightness (%)']}%"})
+        except Exception as e:
+            return str({'error': str(e)})
+
+    else:
+        return str({'error': 'Invalid mode. Use "real-time" or "file".'})
+
+
+sensor_functions = [
+    {
+        "type": "function",
+        "function": {
+            "name": "moisture_sensor_info",
+            "description": "Retrieves soil moisture data either in real-time from a sensor or from a file.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "mode": {"type": "string", "description": "'real-time' for live data from the sensor or 'file' for data from an Excel file.", "enum": ["real-time", "file"]},
+                    "file_path": {"type": "string", "description": "The path to the Excel file containing soil moisture data (required if mode is 'file').", "nullable": True},
+                    "port": {"type": "string", "description": "The serial port to which the sensor is connected (required if mode is 'real-time'). Default is '/dev/ttyUSB0'.", "nullable": True},
+                    "baudrate": {"type": "integer", "description": "The baud rate for serial communication with the sensor. Default is 9600.", "nullable": True}
+                },
+                "required": ["mode"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "light_sensor_info",
+            "description": "Retrieves light sensor data either in real-time from a sensor or from a file.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "mode": {"type": "string", "description": "'real-time' for live data from the sensor or 'file' for data from an Excel file.", "enum": ["real-time", "file"]},
+                    "file_path": {"type": "string", "description": "The path to the Excel file containing brightness data (required if mode is 'file').", "nullable": True},
+                    "port": {"type": "string", "description": "The serial port to which the sensor is connected (required if mode is 'real-time'). Default is '/dev/ttyUSB0'.", "nullable": True},
+                    "baudrate": {"type": "integer", "description": "The baud rate for serial communication with the sensor. Default is 9600.", "nullable": True}
+                },
+                "required": ["mode"]
+            }
+        }
+    }
+]
+
+
+def ask_openai(llm_model, messages, user_message, functions):
+    client = OpenAI()
+    proc_messages = messages
+
+    if user_message:
+        proc_messages.append({"role": "user", "content": user_message})
+
+    response = client.chat.completions.create(model=llm_model, messages=proc_messages, tools=functions, tool_choice="auto")
+    response_message = response.choices[0].message
+    tool_calls = response_message.tool_calls
+
+    if tool_calls:
+        available_functions = {
+            "moisture_sensor_info": moisture_sensor_info,
+            "light_sensor_info": light_sensor_info
+        }
+
+        proc_messages.append(response_message)
+
+        for tool_call in tool_calls:
+            function_name = tool_call.function.name
+            function_to_call = available_functions[function_name]
+            function_args = json.loads(tool_call.function.arguments)
+            function_response = function_to_call(**function_args)
+
+            proc_messages.append({
+                "tool_call_id": tool_call.id,
+                "role": "tool",
+                "name": function_name,
+                "content": function_response,
+            })
+
+        second_response = client.chat.completions.create(model=llm_model, messages=proc_messages)
+        assistant_message = second_response.choices[0].message.content
+    else:
+        assistant_message = response_message.content
+
+    proc_messages.append({"role": "assistant", "content": assistant_message})
+    return proc_messages, assistant_message
+
+
+messages = []
+
+def process(user_message, chat_history):
+    proc_messages, ai_message = ask_openai("gpt-4o-mini", messages, user_message, functions=sensor_functions)
+    chat_history.append((user_message, ai_message))
+    return "", chat_history
+
+with gr.Blocks() as demo:
+    chatbot = gr.Chatbot(label="센서 데이터 조회")
+    user_textbox = gr.Textbox(label="입력")
+    user_textbox.submit(process, [user_textbox, chatbot], [user_textbox, chatbot])
+
+demo.launch(share=True, debug=True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
