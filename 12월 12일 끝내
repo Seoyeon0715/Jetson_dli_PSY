@@ -5,3 +5,6 @@ dcrc@dcrc:~$ ls
  다시         arduino-1.8.19                   DHTlibrary.zip   examples.desktop         Music    nvdli-data  'sensor_data(1).xlsx'        sensor_data.xlsx   USB-Camera
  숫자가       arduino-1.8.19-linuxarm.tar.xz   Documents        light_sensor_data.csv    myenv    Pictures     sensor_data.csv             sketchbook         Videos
  깔려있다면   Desktop                          Downloads        light_sensor_data.xlsx   myenv2   Public      'Sensor data upload.ipynb'   Templates
+
+dcrc@dcrc:~$ arduino
+/usr/local/bin/arduino: line 35: /home/dcrc/arduino-1.8.19/java/bin/java: No such file or directory
